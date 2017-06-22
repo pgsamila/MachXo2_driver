@@ -6,6 +6,8 @@
 #include <linux/cdev.h>
 #include <linux/errno.h>
 
+MODULE_LICENSE("FOSS/OH");
+
 #define DEVICENAME "MachXo2"
 #define READINGDATA "MachXo2 Reads!\n"
 #define TEXTLENGTH 100
@@ -46,7 +48,7 @@ static int machxo2_init(void){
 		printk(KERN_ALERT "MachXo2: failed to add cdev\n");
 		return result;
 	}
-//		printk(KERN_ERR "Unable to register \"Hello,World!\" misc device\n");
+
 	printk(KERN_ALERT "MachXo2: init done\n");
 	return 0;
 }
