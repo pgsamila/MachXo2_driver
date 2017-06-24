@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #start transfer
-echo "Goint to File Transfer mode..."
+echo "Going to File Transfer mode..."
 
 sleep 1
 
@@ -12,7 +12,7 @@ sleep 1
 echo "Are you sure you want to unmount this partiton?(y/n)"
 read RESPONDING
 
-if [ $RESPONDING == "y" || $RESPONDING == "Y" ] ; then
+if [ $RESPONDING == "y" ] ; then
 	echo "setting up the paths"
 	rm -r /opt/TUNNEL_EXCHANGE
 	sleep 1
@@ -43,7 +43,14 @@ if [ $RESPONDING == "y" || $RESPONDING == "Y" ] ; then
 	cp -r /opt/TUNNEL_EXCHANGE /home
 	sleep 2
 	echo "files are coppied!"
+	echo "Compiling and getting ready"
+	cd TUNNEL_EXCHANGE
+	chmod +x create_dev_node.sh 
+	chmod +x remove_dev_node_and_driver.sh 
+	gcc userapp.c
+	sleep 1
 	echo "Operation completed!"
 else 
+	echo "User exit the process"
 	echo "Operation did not pressed!"
 fi

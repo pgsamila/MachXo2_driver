@@ -2,8 +2,6 @@
 
 #start copy process
 
-echo "Make loop"
-sleep 1
 
 sudo losetup /dev/loop0 /home/daemon-x/Documents/GSoC_testing/GITHUB/apertus_qemu_nonProxy/new_kernel_build_image/beta_20170109.dd
 

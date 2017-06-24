@@ -37,7 +37,7 @@ int main(){
 			if(ch == 1){
 				closeResult = close(openResult);
 				if(closeResult < 0){
-					printf("\n	 ERROR on closing device");
+					printf("\n	 closing device \n");
 					return 1;
 				}else{
 					k=0;
@@ -63,7 +63,7 @@ int main(){
 				t=0;
 			while(t<3){
 				printf("Enter your values: ");
-				scanf("%d", &buff);
+				scanf("%s", &buff);
 				writeResult = write(0,buff,100);
 				if(writeResult < 0){
 					printf("\n	 ERROR on reading device\n");
