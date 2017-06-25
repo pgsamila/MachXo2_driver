@@ -2,6 +2,7 @@
 #include <linux/init.h>
 #include <linux/miscdevice.h>
 #include <linux/module.h>
+#include <asm/segment.h>
 #include <asm/uaccess.h>
 #include <linux/cdev.h>
 #include <linux/errno.h>
@@ -15,8 +16,8 @@ char *machxo2_str[TEXTLENGTH];
 
 int machxo2_open(struct inode *inode, struct file *filp);
 int machxo2_release(struct inode *inode, struct file *filp);
-int machxo2_read(struct file * file, char * buf, size_t count, loff_t *ppos);
-int machxo2_write(struct file * file, char * buf, size_t count, loff_t *ppos);
+static ssize_t machxo2_read(struct file *file, char *buf, size_t count, loff_t *ppos);
+static ssize_t machxo2_write(struct file *file, const char *buf, size_t count, loff_t *ppos);
 
 int result;
 int major;
@@ -30,7 +31,7 @@ static const struct file_operations machxo2_fops = {
 	.open	= machxo2_open,
 	.release= machxo2_release,
 	.read	= machxo2_read,
-	.write	= machxo2_write,
+	.write	= machxo2_write
 };
 
 static int machxo2_init(void)
@@ -72,26 +73,32 @@ int machxo2_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-int machxo2_read(struct file * file, char * buf, size_t count, loff_t *ppos)
+static ssize_t machxo2_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 {
-	printk(KERN_ALERT "MachXo2: call for read\n");
-	if(machxo2_str != NULL && count != 0 && count < TEXTLENGTH ){
+	//printk(KERN_ALERT "MachXo2: call for read\n");
+	//if(machxo2_str != NULL && count != 0 && count < TEXTLENGTH ){
         	if(copy_to_user(buf, machxo2_str, count))
                 	return -EINVAL;	
 		*ppos = count;
-        	return count;
-	}
+		printk(KERN_ALERT "MachXo2: Value Read\n");
+        return count;
+	//}
+	//printk(KERN_ALERT "MachXo2: Value Not Read\n");
+	//return 1;
 }
 
-int machxo2_write(struct file * file, char * buf, size_t count, loff_t *ppos)
+static ssize_t machxo2_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 {
 	printk(KERN_ALERT "MachXo2: call for write\n");
-	if(machxo2_str == NULL && buf != NULL && count != 0 && count < TEXTLENGTH){
+	//if(/*machxo2_str == NULL &&*/ buf != NULL && count != 0 && count < TEXTLENGTH){
 	        if(copy_from_user(machxo2_str,buf, count))
                 	return -EINVAL;
-        	*ppos = count;
+        *ppos = count;
+		printk(KERN_ALERT "MachXo2: Value written\n");
 	 	return count;
-	}  
+	//}  
+	//printk(KERN_ALERT "MachXo2: Value Not written\n");
+	//return 1;
 }
 
 module_init(machxo2_init);

@@ -2,13 +2,18 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #define DEVICENAME "/dev/MachXo2"
 //#define O_RDWR 2
 
 int ch=0;
-char buff[100];
-int readResult,writeResult,closeResult,k=0;
-size_t openResult;
+const char buff[100];
+char buffr[100];
+size_t readResult, writeResult;
+int closeResult, k=0;
+int openResult;
 int main(){
 
 	int t=0;
@@ -43,8 +48,7 @@ int main(){
 					k=0;
 					printf("	-----Device is closing-----\n\n");
 				}
-					
-				
+			
 				printf("	----------THANK YOU----------\n");
 				break;
 			}else{
@@ -60,26 +64,27 @@ int main(){
 				printf("	-----Device is opening-----\n\n");
 			}
 		}else if(ch == 2){// write the file
-				t=0;
-			while(t<3){
+			//	t=0;
+			//while(t<3){
 				printf("Enter your values: ");
 				scanf("%s", &buff);
-				writeResult = write(0,buff,100);
+				writeResult = write(openResult,&buff,100);
 				if(writeResult < 0){
 					printf("\n	 ERROR on reading device\n");
 					return 1;
 				}else{
 					printf("	%s\n",buff);
 				}
-			t++;
-			}	
+			//t++;
+			//}	
 		}else if(ch == 3){// read the file
-			readResult = read(openResult,buff,100);
+			printf("\n before:	 %s \n",buffr);
+			readResult = read(openResult,&buffr,100);
 			if(readResult < 0){
 				printf("\n	 ERROR on reading device\n");
 				return 1;
 			}else{
-				printf("\n	 %s \n",buff);
+				printf("\n After:	 %s \n",buffr);
 			}
 		}else if(ch == 4){// close the program
 			closeResult = close(openResult);
