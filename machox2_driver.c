@@ -75,16 +75,16 @@ int machxo2_release(struct inode *inode, struct file *filp)
 
 static ssize_t machxo2_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 {
-	//printk(KERN_ALERT "MachXo2: call for read\n");
-	//if(machxo2_str != NULL && count != 0 && count < TEXTLENGTH ){
+	printk(KERN_ALERT "MachXo2: call for read\n");
+	if(machxo2_str != NULL && count != 0 && count < TEXTLENGTH ){
         	if(copy_to_user(buf, machxo2_str, count))
                 	return -EINVAL;	
 		*ppos = count;
 		printk(KERN_ALERT "MachXo2: Value Read\n");
-        return count;
-	//}
-	//printk(KERN_ALERT "MachXo2: Value Not Read\n");
-	//return 1;
+        return 0;
+	}
+	printk(KERN_ALERT "MachXo2: Value Not Read\n");
+	return 0;
 }
 
 static ssize_t machxo2_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
