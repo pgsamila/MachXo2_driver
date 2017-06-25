@@ -4,6 +4,6 @@ rm -f /dev/MachXo2
 
 echo "Dev node removed!"
 
-rmmod machox2_driver.ko
+rmmod machxo2_driver.ko
 
 echo "Driver removed!"
