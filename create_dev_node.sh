@@ -1,6 +1,6 @@
 #!/bin/sh
 
-insmod machxo2_driver.ko
+insmod machxo2_complete_driver.ko
 
 echo "Enter major number: "
 
