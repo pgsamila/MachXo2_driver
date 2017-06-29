@@ -57,20 +57,20 @@ struct cdev cdev;
 
 /* The I2C driver structure */ 
 static const struct i2c_device_id machxo2_idtable[] = {
-	{ "i2c", 0 },
+	{ "machxo2", 0 },
     	{ },
 };
 
 /* I2C driver sturct */
 static struct i2c_driver machxo2_i2c_driver = {
 	.driver = {
-		.name	= DEVICENAME,
+		.name	= "machxo2",
 		//.pm	= &machxo2_pm_ops,	
 	},
 
 	.id_table	= machxo2_idtable,
 	.probe		= machxo2_probe,
-	.remove		= __devexit_p(machxo2_remove),//machxo2_remove,
+	.remove		= machxo2_remove,//machxo2_remove,
 /*
 	.class		= I2C_CLASS_SOMETHING,
 	.detect		= machxo2_detect,
@@ -80,14 +80,22 @@ static struct i2c_driver machxo2_i2c_driver = {
 	.command	= machxo2_command,*/
 };
 
+/* I2C power management dev_pm_ops */
+static const struct dev_pm_ops machxo2_pm_ops = {
+	//.suspend	= MachXo2_suspend,
+	//.resume		= MachXo2_resume
+};
+
+
+/* I2C prob */
 static int machxo2_probe(struct i2c_client *client,
 			     const struct i2c_device_id *id)
 {
-	//module_i2c_driver(machxo2_i2c_driver);
 	printk(KERN_ALERT "MachXo2: Prob Call\n");
 	return 0;
 }
 
+/* I2C prob remove */
 static int machxo2_remove(struct i2c_client *client)
 {
 	printk(KERN_ALERT "MachXo2: Prob Removed Call\n");
@@ -95,8 +103,12 @@ static int machxo2_remove(struct i2c_client *client)
 }
 
 
+	/* store the value */
+	void i2c_set_clientdata(struct i2c_client *client, void *data);
 
-//
+	/* retrieve the value */
+	void *i2c_get_clientdata(const struct i2c_client *client);
+
 /* file operations structure */
 static const struct file_operations machxo2_fops = {
 	.owner	 	= THIS_MODULE,
@@ -107,15 +119,12 @@ static const struct file_operations machxo2_fops = {
 };
 
 
-
 /*
  * machxo2_init - driver initializing at insmode
  * @func: function to initialize the driver
  */
 static int machxo2_init(void)
 {
-
-	
 	if(i2c_add_driver(&machxo2_i2c_driver)!=0){
 		printk(KERN_ALERT "MachXo2: I2C registered\n");
 	}else{
