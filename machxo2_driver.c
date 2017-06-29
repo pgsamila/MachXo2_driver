@@ -9,15 +9,17 @@
  * as published by the Free Software Foundation; version 3
  * of the License.
  */
+#include <linux/kernel.h>
 #include <linux/fs.h>
-//#include <linux/init.h>
-//#include <linux/miscdevice.h>
-#include <linux/module.h>
-//#include <asm/segment.h>
+#include <linux/init.h>
+#include <linux/miscdevice.h>
+
+#include <asm/segment.h>
 #include <asm/uaccess.h>
 #include <linux/cdev.h>
-//#include <linux/errno.h>
-
+#include <linux/errno.h>
+#include <linux/i2c.h>
+#include <linux/module.h>
 #include <linux/i2c-dev.h>
 
 #define	DEVICENAME	"MachXo2"
@@ -26,13 +28,17 @@
 MODULE_LICENSE("FOSS/OH");
 
 /* funcitons */
+//static int machxo2_init(void);
+//static void machxo2_exit(void);
 int machxo2_open(struct inode *inode, struct file *filp);
 int machxo2_release(struct inode *inode, struct file *filp);
 static ssize_t machxo2_read(struct file *file, char *buf, 
 				size_t count, loff_t *ppos);
 static ssize_t machxo2_write(struct file *file, const char *buf, 
 				size_t count, loff_t *ppos);
-
+static int machxo2_probe(struct i2c_client *client,
+			     const struct i2c_device_id *id);
+static int machxo2_remove(struct i2c_client *client);
 
 /* global variables */
 ssize_t machxo2_size;
@@ -54,30 +60,46 @@ static const struct file_operations machxo2_fops = {
 	.write	 	= machxo2_write
 };
 
-/* The I2C driver structure */
-static struct i2c_device_id machxo2_idtable[] = {
-	{"i2c-", 0},
-	{},
-}
+
+/* The I2C driver structure */ 
+static const struct i2c_device_id machxo2_idtable[] = {
+	{ "i2c", 0 },
+    	{ },
+};
 
 MODULE_DEVICE_TABLE(i2c, machxo2_idtable);
 
 static struct i2c_driver machxo2_i2c_driver = {
 	.driver = {
 		.name	= DEVICENAME,
-		.pm	= &machxo2_pm_ops,	/* optional */
+		//.pm	= &machxo2_pm_ops,	
 	},
 
 	.id_table	= machxo2_idtable,
 	.probe		= machxo2_probe,
-	.remove		= machxo2_remove,*/
-	/* if device autodetection is needed: */
+	.remove		= machxo2_remove,
+/*
 	.class		= I2C_CLASS_SOMETHING,
 	.detect		= machxo2_detect,
 	.address_list	= normal_i2c,
 
-	.shutdown	= machxo2_shutdown,	/* optional */
-	.command	= machxo2_command,/* optional, deprecated */
+	.shutdown	= machxo2_shutdown,	
+	.command	= machxo2_command,*/
+};
+
+static int machxo2_probe(struct i2c_client *client,
+			     const struct i2c_device_id *id)
+{
+	printk(KERN_ALERT "MachXo2: Prob Call\n");
+	return 0;
+/*Remember that the i2c_driver does not create those client handles.  The
+handle may be used during foo_probe().  If foo_probe() reports success
+(zero not a negative status code) it may save the handle and use it until
+foo_remove() returns.  That binding model is used by most Linux drivers.*/
+}
+static int machxo2_remove(struct i2c_client *client)
+{
+	printk(KERN_ALERT "MachXo2: Prob Removed Call\n");
 }
 
 /*
@@ -87,8 +109,11 @@ static struct i2c_driver machxo2_i2c_driver = {
 static int machxo2_init(void)
 {
 
+	return i2c_add_driver(&machxo2_i2c_driver);
+
 	/* register a range of char device numbers */
-	result = alloc_chrdev_region(&dev, minor, numofdevice, DEVICENAME); 
+	result = alloc_chrdev_region(&dev, minor, numofdevice,
+		DEVICENAME); 
 	if(result < 0){
 		printk(KERN_ALERT "MachXo2: did not registered\n");
 		return result;
@@ -109,13 +134,15 @@ static int machxo2_init(void)
 	printk(KERN_ALERT "MachXo2: initialization complete\n");
 	return 0;
 }
-
+module_i2c_driver(machxo2_i2c_driver);
 /*
  * machxo2_exit - driver removing at rmmode
  * @func: function to remove the driver
  */
 static void machxo2_exit(void)
 {
+	i2c_del_driver(&machxo2_i2c_driver);
+
 	/* remove cdev structure */
 	cdev_del(&cdev);
 
@@ -156,6 +183,8 @@ int machxo2_release(struct inode *inode, struct file *filp)
 static ssize_t machxo2_read(struct file *file, char __user *buf, 
 			size_t count, loff_t *ppos)
 {
+
+
 	printk(KERN_ALERT "MachXo2: call for read\n");
 	
 	/* Get length of saved data */
