@@ -22,11 +22,16 @@
 #include <linux/module.h>
 #include <linux/i2c-dev.h>
 
+#include "machxo2_i2c_driver.h"
+
+
 #define	DEVICENAME	"MachXo2"
 #define	TEXTLENGTH	100
+/* The Pic Register */
+#define MACHXO2_REG_CONF 	0x48
+#define MACHXO2_SHUTDOWN 	0x01
 
-
-MODULE_LICENSE("FOSS/OH");
+MODULE_LICENSE("GPL");
 
 
 /* funcitons */
@@ -38,9 +43,10 @@ static ssize_t machxo2_read(struct file *file, char *buf,
 				size_t count, loff_t *ppos);
 static ssize_t machxo2_write(struct file *file, const char *buf, 
 				size_t count, loff_t *ppos);
-static int machxo2_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id);
-static int machxo2_remove(struct i2c_client *client);
+
+
+
+
 
 
 /* global variables */
@@ -53,145 +59,7 @@ int numofdevice = 1;
 dev_t dev;
 struct cdev cdev;
 
-/* Addresses scaned */
-static const unsigned short normal_i2c[] ={ 0x48, 0x49, 0x4a, 0x4b, 0x4c,
-					0x4d, 0x4e, 0x4f, I2C_CLIENT_END };
 
-/* The Pic Register */
-#define MACHXO2_REG_CONF 	0x48
-
-static const u8 MACHXO2_REG_TEMP[3] ={
-	0x00,		/* input */
-	0x03,		/* max */
-	0x02,		/* hyst */
-};
-
-/* Each client has this additional data */
-struct machxo2_data {
-	struct i2c_client	*client;
-	struct device		*hwmon_dev;
-	struct thermal_zone_device	*tz;
-	struct mutex		update_lock;
-	u8			orig_conf;
-	u8			resolution;	/* In bits, between 9 and 12 */
-	u8			resolution_limits;
-	char			valid;		/* !=0 if registers are valid */
-	unsigned long		last_updated;	/* In jiffies */
-	unsigned long		sample_time;	/* In jiffies */
-	s16			temp[3];	/* Register values,
-						   0 = input
-						   1 = max
-						   2 = hyst */	
-};
-
-
-static int machxo2_read_value(struct i2c_client *client, u8 reg);
-
-static struct machxo2_data *machxo2_update_device(struct device *dev);
-
-
-
-
-/*--------------------------------------------------------------*/
-
-
-static inline long machxo2_reg_to_mc(s16 temp, u8 resolution)
-{
-	return ((temp >> (16 - resolution)) * 1000) >> (resolution - 8);
-}
-
-
-/* sysfs attributes for hwmon */
-
-static int machxo2_read_temp(void *dev, long *temp)
-{
-	struct machxo2_data *data = machxo2_update_device(dev);
-
-	if (IS_ERR(data))
-		return PTR_ERR(data);
-
-	*temp = machxo2_reg_to_mc(data->temp[0], data->resolution);
-
-	return 0;
-}
-
-
-/*-----------------------------------------------------------------------*/
-
-/* device probe and removal */
-/* I2C prob */
-static int machxo2_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
-{
-	struct device *dev = &client->dev;
-	struct machxo2_data *data;
-	int status;
-	u8 set_mask, clr_mask;
-	int new;
-	//enum
-	if (!i2c_check_functionality(client->adapter,
-		I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA))
-	return -EIO;
-
-	data = devm_kzalloc(dev, sizeof(struct machxo2_data), GFP_KERNEL);
-	if (!data)
-		return -ENOMEM;
-
-
-	printk(KERN_ALERT "MachXo2: Prob Call\n");
-	return 0;
-}
-
-
-/*----------------------------------------------------------------------------*/
-
-/* The I2C driver structure */ 
-static const struct i2c_device_id machxo2_idtable[] = {
-	{ "machxo2", 0 },
-    	{ },
-};
-
-/* I2C driver sturct */
-static struct i2c_driver machxo2_i2c_driver = {
-	.driver = {
-		.name	= "machxo2",
-		//.pm	= &machxo2_pm_ops,	
-	},
-
-	.id_table	= machxo2_idtable,
-	.probe		= machxo2_probe,
-	.remove		= machxo2_remove,//machxo2_remove,
-/*
-	.class		= I2C_CLASS_SOMETHING,
-	.detect		= machxo2_detect,
-	.address_list	= normal_i2c,
-
-	.shutdown	= machxo2_shutdown,	
-	.command	= machxo2_command,*/
-};
-
-/* I2C power management dev_pm_ops */
-static const struct dev_pm_ops machxo2_pm_ops = {
-	//.suspend	= MachXo2_suspend,
-	//.resume		= MachXo2_resume
-};
-
-
-
-
-/* I2C prob remove */
-static int machxo2_remove(struct i2c_client *client)
-{
-	printk(KERN_ALERT "MachXo2: Prob Removed Call\n");
-	return 0;
-}
-
-
-	/* store the value */
-	void i2c_set_clientdata(struct i2c_client *client, void *data);
-
-	/* retrieve the value */
-	void *i2c_get_clientdata(const struct i2c_client *client);
 
 /* file operations structure */
 static const struct file_operations machxo2_fops = {
@@ -202,18 +70,18 @@ static const struct file_operations machxo2_fops = {
 	.write	 	= machxo2_write
 };
 
-
 /*
  * machxo2_init - driver initializing at insmode
  * @func: function to initialize the driver
  */
 static int machxo2_init(void)
 {
+/*
 	if(i2c_add_driver(&machxo2_i2c_driver)!=0){
 		printk(KERN_ALERT "MachXo2: I2C Not registered\n");
 	}else{
 		printk(KERN_ALERT "MachXo2: I2C registered\n");
-	}
+	}*/
 	/* register a range of char device numbers */
 	result = alloc_chrdev_region(&dev, minor, numofdevice,
 		DEVICENAME); 
@@ -240,25 +108,13 @@ static int machxo2_init(void)
 	return 0;
 }
 
-
-int machxo2_i2c_read_value(struct i2c_client *client, u8 reg)
-{
-	if (reg < 0x10)	/* byte-sized register */
-		return i2c_smbus_read_byte_data(client, reg);
-	else		/* word-sized register */
-		return i2c_smbus_read_word_data(client, reg);
-}
-
-
-
-
 /*
  * machxo2_exit - driver removing at rmmode
  * @func: function to remove the driver
  */
 static void machxo2_exit(void)
 {
-	i2c_del_driver(&machxo2_i2c_driver);
+	//i2c_del_driver(&machxo2_i2c_driver);
 
 	/* remove cdev structure */
 	cdev_del(&cdev);
@@ -356,4 +212,6 @@ static ssize_t machxo2_write(struct file *file, const char __user *buf,
 /* I2C macro */
 MODULE_DEVICE_TABLE(i2c, machxo2_idtable);
 module_init(machxo2_init);
+//module_i2c_driver(machxo2_i2c_driver);
 module_exit(machxo2_exit);
+

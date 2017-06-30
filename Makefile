@@ -1,5 +1,5 @@
 obj-m += machxo2_complete_driver.o
-machxo2_complete_driver-objs := machxo2_driver.o
+machxo2_complete_driver-objs := machxo2_driver.o machxo2_i2c_driver.o
 
 
 all:
