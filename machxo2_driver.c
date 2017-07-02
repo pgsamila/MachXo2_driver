@@ -14,6 +14,14 @@
 #include <linux/init.h>
 #include <linux/miscdevice.h>
 #include <linux/delay.h>
+#include <linux/slab.h> 
+#include <linux/types.h> 
+#include <linux/ioctl.h>
+#include <linux/fcntl.h>  
+
+#include <linux/workqueue.h>
+#include <linux/gpio.h>
+#include <linux/interrupt.h>  
 
 #include <asm/segment.h>
 #include <asm/uaccess.h>
@@ -34,8 +42,11 @@
 #define MACHXO2_SHUTDOWN 	0x01
 
 #define MACHXO2_I2C_ADDRESS	0x48
-#define MACHXO2_OMAP_I2C_ID	0 /*Not sure what to device?*/
+#define MACHXO2_OMAP_I2C_ID	1 
 #define MACHXO2_REG_CTRL_REG1		0x20
+#define MACHXO2_REG_STATUS_REG	0x48
+#define MACHXO_READ_WAIT_TIME_US 100
+#define MACHXO2_READ_TIMEOUT_US	3000000
 
 MODULE_LICENSE("GPL");
 
@@ -294,31 +305,38 @@ int machxo2_release(struct inode *inode, struct file *filp)
 
 
 //TODO: fix read value function to work read function 
-int machxo2_read_values(int mach_data){
+int machxo2_read_values(int mach_data)
+{
 	int retval = 0;
 	int i =0;
-	int j =0;
+#include <linux/workqueue.h>
+#include <linux/gpio.h>
+#include <linux/interrupt.h>
+	//int j =0;
 	char val_reg_stat = 0;
 	char tmp;
 	int val[6];
 
 	mach_data = 0;
-
-
+	printk(KERN_ALERT "MachXo2: machxo2_ read_ values calles\n");
+/*Fail*/ //down(&machxo2_dev.sem);
+	
 do{
-		retval  = machxo2_get_register(0x27, &val_reg_stat);
+		printk(KERN_ALERT "MachXo2: went in to do while loop\n");
+		retval  = machxo2_get_register(MACHXO2_REG_STATUS_REG, &val_reg_stat);
 		if (retval<0){
 			printk(KERN_ALERT "MachXo2: line 311\n");
 			goto exit_function;
 		}
 		//TODO: check for udelay
-		//udelay(3000000);
-		for(j=0;j<3000000;j++){
+		udelay(MACHXO_READ_WAIT_TIME_US);
+		i+=MACHXO_READ_WAIT_TIME_US;
+		//for(j=0;j<3000000;j++){
 			//TODO: this is to keep a delay (make a better one)
-		}
-		i+=100;
+		//}
+		//i+=100;
 		/* time out read */
-		if (i>3000000){
+		if (i>MACHXO2_READ_TIMEOUT_US){
 			retval  = -ETIMEDOUT;
 			goto exit_function;
 		}
@@ -327,14 +345,14 @@ do{
 	
 	for (i=0; i<6; i++){
 		//TODO: define 0x28
-		retval = machxo2_get_register(0x28 + i,&tmp);
+		//retval = machxo2_get_register(0x28 + i,&tmp);
 		if (retval<0) goto exit_function;
 		
 		val[i] = tmp;
 	}
 	
 		//TODO: RET_CTRL_REG define this 
-	retval = machxo2_get_register(0x23, &tmp);
+	//retval = machxo2_get_register(0x23, &tmp);
 	i = ((tmp>>3) & 0x3 );
 	if ( i ==3) i =2;	
 	
@@ -342,7 +360,7 @@ do{
 		//TODO: define this 61 bit number 
 
 exit_function:
-	up(&machxo2_dev.sem);
+	//up(&machxo2_dev.sem);
 	return retval;
 }
 
@@ -358,11 +376,11 @@ static ssize_t machxo2_read(struct file *file, char __user *buf,
 {
 	int retval = 0;
 	int i;
-	int mach_data;
+	int mach_data = 0;
 
 	for (i=0;i<10;i++){
 		retval = machxo2_read_values(mach_data);
-		printk("MachXo2: I2C data: 0x%x   %d\n",mach_data,retval);
+		printk( "MachXo2: I2C data: %d : 0x%x   %d\n", i, mach_data, retval);
 	}
 
 	//*i2c_get_clientdata(const struct i2c_client *client);
