@@ -38,15 +38,15 @@
 #define	DEVICENAME	"machxo2"
 #define	TEXTLENGTH	100
 /* The Pic Register */
-#define MACHXO2_REG_CONF 	0x48
-#define MACHXO2_SHUTDOWN 	0x01
+#define MACHXO2_REG_CONF 		0x48
+#define MACHXO2_SHUTDOWN 		0x01
 
-#define MACHXO2_I2C_ADDRESS	0x48
-#define MACHXO2_OMAP_I2C_ID	1 
+#define MACHXO2_I2C_ADDRESS		0x48
+#define MACHXO2_I2C_ID			0	/* dev/i2c-x ; enter x value */
 #define MACHXO2_REG_CTRL_REG1		0x20
-#define MACHXO2_REG_STATUS_REG	0x48
-#define MACHXO_READ_WAIT_TIME_US 100
-#define MACHXO2_READ_TIMEOUT_US	3000000
+#define MACHXO2_REG_STATUS_REG		0x48
+#define MACHXO_READ_WAIT_TIME_US 	100
+#define MACHXO2_READ_TIMEOUT_US		3000000
 
 MODULE_LICENSE("GPL");
 
@@ -180,17 +180,16 @@ int machxo2_set_register(char reg, char val)
  */
 int machxo2_get_register(char reg, char *val)
 {
-	
 	int retval = 0;
 	
 	retval = i2c_master_send(machxo2_dev.client, &reg, 1);	
 	if (retval <0) { 
-		printk(KERN_ALERT "Machxo2 : line 177\n");
+		printk(KERN_ALERT "Machxo2 : line 188\n");
 		goto error;
 	}
 	retval = i2c_master_recv(machxo2_dev.client, val,1);	
 	if (retval <0) {
-		printk(KERN_ALERT "Machxo2 : line 182\n");
+		printk(KERN_ALERT "Machxo2 : line 193\n");
 		goto error;
 	}
 	return 0;
@@ -205,12 +204,13 @@ error:
  */
 static int machxo2_init(void)
 {
+	
 	int retval = 0;
 	dev_t DEV = 0;
-
 	struct i2c_board_info info;
 	struct i2c_adapter *adapter;
 	
+	printk(KERN_ALERT "STARTING INIT MACHXO2\n");
 	retval = i2c_add_driver(&machxo2_i2c_driver);
 	if(retval){
 		printk(KERN_ALERT "MachXo2: I2C driver registration failed\n");
@@ -220,7 +220,7 @@ static int machxo2_init(void)
 	info.addr = MACHXO2_I2C_ADDRESS;
 	strlcpy(info.type, MACHXO2_NAME, I2C_NAME_SIZE);
 
-	adapter = i2c_get_adapter(MACHXO2_OMAP_I2C_ID);
+	adapter = i2c_get_adapter(MACHXO2_I2C_ID);
 	if ( NULL == adapter )
 	{
 		printk (KERN_NOTICE "MachXo2: Failed to get the adapter.\n");
@@ -255,7 +255,7 @@ static int machxo2_init(void)
 	}
 
 	printk ( KERN_ALERT "MachXo2 : Major number = %d \n" , MAJOR_NUM ) ;
-
+	sema_init(&machxo2_dev.sem,1);
 	printk(KERN_ALERT "MachXo2: initialization complete\n");
 	//machxo2_i2c_read_value(struct i2c_client *client, u8 reg);
 	return 0;
@@ -309,50 +309,42 @@ int machxo2_read_values(int mach_data)
 {
 	int retval = 0;
 	int i =0;
-#include <linux/workqueue.h>
-#include <linux/gpio.h>
-#include <linux/interrupt.h>
-	//int j =0;
 	char val_reg_stat = 0;
 	char tmp;
 	int val[6];
 
 	mach_data = 0;
 	printk(KERN_ALERT "MachXo2: machxo2_ read_ values calles\n");
-/*Fail*/ //down(&machxo2_dev.sem);
+	if(down_interruptible(&machxo2_dev.sem))
+		return -ERESTARTSYS;
 	
 do{
 		printk(KERN_ALERT "MachXo2: went in to do while loop\n");
-		retval  = machxo2_get_register(MACHXO2_REG_STATUS_REG, &val_reg_stat);
+		retval  = machxo2_get_register(0x01, &val_reg_stat);
 		if (retval<0){
-			printk(KERN_ALERT "MachXo2: line 311\n");
+			printk(KERN_ALERT "MachXo2: line 327\n");
 			goto exit_function;
 		}
-		//TODO: check for udelay
 		udelay(MACHXO_READ_WAIT_TIME_US);
 		i+=MACHXO_READ_WAIT_TIME_US;
-		//for(j=0;j<3000000;j++){
-			//TODO: this is to keep a delay (make a better one)
-		//}
-		//i+=100;
-		/* time out read */
+		
 		if (i>MACHXO2_READ_TIMEOUT_US){
 			retval  = -ETIMEDOUT;
 			goto exit_function;
 		}
 		
-	}while (!(val_reg_stat & 0x10));
+	}while (!(val_reg_stat & 0x48));
 	
 	for (i=0; i<6; i++){
 		//TODO: define 0x28
-		//retval = machxo2_get_register(0x28 + i,&tmp);
+		retval = machxo2_get_register(0x48 + i,&tmp);
 		if (retval<0) goto exit_function;
 		
 		val[i] = tmp;
 	}
 	
 		//TODO: RET_CTRL_REG define this 
-	//retval = machxo2_get_register(0x23, &tmp);
+	retval = machxo2_get_register(0x48, &tmp);
 	i = ((tmp>>3) & 0x3 );
 	if ( i ==3) i =2;	
 	
@@ -360,7 +352,7 @@ do{
 		//TODO: define this 61 bit number 
 
 exit_function:
-	//up(&machxo2_dev.sem);
+	up(&machxo2_dev.sem);
 	return retval;
 }
 
