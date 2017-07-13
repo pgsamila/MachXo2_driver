@@ -31,7 +31,7 @@
 #include <linux/module.h>
 #include <linux/i2c-dev.h>
 
-#include "machxo2_i2c_driver.h"
+//#include "machxo2_i2c_driver.h"
 
 #define MACHXO2_NAME 	"machxo2"
 
@@ -68,26 +68,24 @@ struct machxo2_data {
 	struct cdev cdev;	  
 }machxo2_dev;
 
-int MAJOR_NUM = 100;
+int MAJOR_NUM = 101;
 
 /* funcitons */
 static int machxo2_init(void);
 static void machxo2_exit(void);
 int machxo2_open(struct inode *inode, struct file *filp);
 int machxo2_release(struct inode *inode, struct file *filp);
-static ssize_t machxo2_read(struct file *file, char *buf, 
-				size_t count, loff_t *ppos);
-static ssize_t machxo2_write(struct file *file, const char *buf, 
-				size_t count, loff_t *ppos);
-static int machxo2_i2c_probe(struct i2c_client *client,
-			     	const struct i2c_device_id *id);
+static ssize_t machxo2_read(struct file *file, char *buf, size_t count, loff_t *ppos);
+static ssize_t machxo2_write(struct file *file, const char *buf, size_t count, loff_t *ppos);
+static int machxo2_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id);
 static int machxo2_i2c_remove(struct i2c_client *client);
 int machxo2_set_register(char reg, char val);
 int machxo2_get_register(char reg, char *val);
+int machxo2_config(void);
 
 
 /* machxo2 file operations structure */
-static const struct file_operations machxo2_fops = {
+struct file_operations machxo2_fops = {
 	.owner	 	= THIS_MODULE,
 	.open	 	= machxo2_open,
 	.release	= machxo2_release,
@@ -124,6 +122,7 @@ static int machxo2_i2c_probe(struct i2c_client *client, const struct i2c_device_
 	
 	if(MACHXO2_I2C_ADDRESS == client->addr){
 		// TODO: do any init here (put device sleep)
+		printk(KERN_ALERT "MachXo2: Probe\n");
 		ret = 0;
 	}
 	
@@ -136,8 +135,8 @@ static int machxo2_i2c_probe(struct i2c_client *client, const struct i2c_device_
  */
 static int machxo2_i2c_remove(struct i2c_client *client)
 {
-	//i2c_del_driver(&machxo2_i2c_driver);
 	printk(KERN_ALERT "MachXo2: i2c_remove\n");
+
 	return 0;
 }
 
@@ -161,7 +160,7 @@ int machxo2_set_register(char reg, char val)
 	
 	if (retval <0) 
 	{
-		printk( KERN_ALERT " Machxo2: Error setting register 0x%x\n",reg);
+		printk( KERN_ALERT "Machxo2: Error setting register 0x%x\n",reg);
 		return retval;
 	}
 	
@@ -199,6 +198,46 @@ error:
 	return retval;
 }
 
+int machxo2_config()
+{
+	int retval = 0;
+	char tmp;
+	int i;
+	char reg_default_val[13][2] = {
+		{0x20, 0x00},	  
+		{0x21, 0x09},	
+	        {0x22, 0x01},   
+		{0x23, 0x80},
+		{0x26, 0x00},
+		{0X32, 0x16},
+		{0X33, 0x00},
+		{0X36, 0x10},
+		{0X37, 0x00},
+		{0x25, 0xFF},
+		{0X30, 0x7F},
+		{0X34, 0x2A},
+		{0x24, 0x00}
+	};
+	
+	for (i=0;i<13;i++)
+	{
+		
+		if (i==10){/*FILTER_RESET*/
+			retval = machxo2_get_register(reg_default_val[i][0],&tmp);
+			printk(KERN_ALERT "MachXo2: machxo2_get_reg try %d \n",i);
+		}
+		else{
+			retval = machxo2_set_register(reg_default_val[i][0],reg_default_val[i][1]);
+			printk(KERN_ALERT "MachXo2: machxo2_set_reg try %d \n",i);
+		}
+		
+		if (retval<0)
+			return retval;
+	}
+	
+	return 0;
+}
+
 /** 
  *  machxo2_init() - machxo2 init function
  */
@@ -229,9 +268,9 @@ static int machxo2_init(void)
 	machxo2_dev.client = i2c_new_device(adapter, &info);
 	i2c_put_adapter(adapter);
 	if(NULL == machxo2_dev.client){
-		printk(KERN_NOTICE "MachXo2: Failed to cread the new i2c device.\n");
+		printk(KERN_NOTICE "MachXo2: Failed to creat the new i2c device.\n");
 	}
-
+	printk(KERN_NOTICE "MachXo2: created the new i2c device.\n");
 
 	if(MAJOR_NUM){
 		DEV = MKDEV ( MAJOR_NUM , 0 ) ;
@@ -253,6 +292,14 @@ static int machxo2_init(void)
 		printk ( KERN_NOTICE "MachXo2: Cdev registration failed. \n");
 		goto fail;
 	}
+	printk(KERN_ALERT "MachXo2: machxo2_config\n");
+	retval = machxo2_config();
+	if ( retval <0 )
+	{
+		printk ( KERN_NOTICE "MachXo2: config registration failed. \n");
+		//goto fail;
+	}
+
 
 	printk ( KERN_ALERT "MachXo2 : Major number = %d \n" , MAJOR_NUM ) ;
 	sema_init(&machxo2_dev.sem,1);
@@ -320,7 +367,7 @@ int machxo2_read_values(int mach_data)
 	
 do{
 		printk(KERN_ALERT "MachXo2: went in to do while loop\n");
-		retval  = machxo2_get_register(0x01, &val_reg_stat);
+		retval  = machxo2_get_register(0x48, &val_reg_stat);
 		if (retval<0){
 			printk(KERN_ALERT "MachXo2: line 327\n");
 			goto exit_function;
