@@ -44,7 +44,7 @@
 #define MACHXO2_I2C_ADDRESS		0x48
 #define MACHXO2_I2C_ID			0	/* dev/i2c-x ; enter x value */
 #define MACHXO2_REG_CTRL_REG1		0x20
-#define MACHXO2_REG_STATUS_REG		0x48
+#define MACHXO2_REG_STATUS_REG		0x46
 #define MACHXO_READ_WAIT_TIME_US 	100
 #define MACHXO2_READ_TIMEOUT_US		3000000
 
@@ -68,7 +68,7 @@ struct machxo2_data {
 	struct cdev cdev;	  
 }machxo2_dev;
 
-int MAJOR_NUM = 101;
+int MAJOR_NUM = 100;
 
 /* funcitons */
 static int machxo2_init(void);
@@ -204,7 +204,7 @@ int machxo2_config()
 	char tmp;
 	int i;
 	char reg_default_val[13][2] = {
-		{0x20, 0x00},	  
+		{0x48, 0x00},	  
 		{0x21, 0x09},	
 	        {0x22, 0x01},   
 		{0x23, 0x80},
@@ -219,7 +219,7 @@ int machxo2_config()
 		{0x24, 0x00}
 	};
 	
-	for (i=0;i<13;i++)
+	for (i=0;i<1;i++)
 	{
 		
 		if (i==10){/*FILTER_RESET*/
