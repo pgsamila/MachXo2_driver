@@ -38,10 +38,10 @@
 #define	DEVICENAME	"machxo2"
 #define	TEXTLENGTH	100
 /* The Pic Register */
-#define MACHXO2_REG_CONF 		0x48
+#define MACHXO2_REG_CONF 		0x46
 #define MACHXO2_SHUTDOWN 		0x01
 
-#define MACHXO2_I2C_ADDRESS		0x48
+#define MACHXO2_I2C_ADDRESS		0x48    /*Error on creating i2c*/
 #define MACHXO2_I2C_ID			0	/* dev/i2c-x ; enter x value */
 #define MACHXO2_REG_CTRL_REG1		0x20
 #define MACHXO2_REG_STATUS_REG		0x46
@@ -75,9 +75,12 @@ static int machxo2_init(void);
 static void machxo2_exit(void);
 int machxo2_open(struct inode *inode, struct file *filp);
 int machxo2_release(struct inode *inode, struct file *filp);
-static ssize_t machxo2_read(struct file *file, char *buf, size_t count, loff_t *ppos);
-static ssize_t machxo2_write(struct file *file, const char *buf, size_t count, loff_t *ppos);
-static int machxo2_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id);
+static ssize_t machxo2_read(struct file *file, char *buf, size_t count, 
+								loff_t *ppos);
+static ssize_t machxo2_write(struct file *file, const char *buf, size_t count, 
+								loff_t *ppos);
+static int machxo2_i2c_probe(struct i2c_client *client, 
+						const struct i2c_device_id *id);
 static int machxo2_i2c_remove(struct i2c_client *client);
 int machxo2_set_register(char reg, char val);
 int machxo2_get_register(char reg, char *val);
@@ -116,7 +119,8 @@ static struct i2c_driver machxo2_i2c_driver = {
 
 /* device probe and removal */
 /* I2C prob */
-static int machxo2_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int machxo2_i2c_probe(struct i2c_client *client, 
+						const struct i2c_device_id *id)
 {
 	int ret = -ENODEV;
 	
@@ -160,7 +164,7 @@ int machxo2_set_register(char reg, char val)
 	
 	if (retval <0) 
 	{
-		printk( KERN_ALERT "Machxo2: Error setting register 0x%x\n",reg);
+		printk(KERN_ALERT "Machxo2: Error setting register 0x%x\n",reg);
 		return retval;
 	}
 	
@@ -219,7 +223,7 @@ int machxo2_config()
 		{0x24, 0x00}
 	};
 	
-	for (i=0;i<1;i++)
+	for (i=0;i<13;i++)
 	{
 		
 		if (i==10){/*FILTER_RESET*/
@@ -227,7 +231,8 @@ int machxo2_config()
 			printk(KERN_ALERT "MachXo2: machxo2_get_reg try %d \n",i);
 		}
 		else{
-			retval = machxo2_set_register(reg_default_val[i][0],reg_default_val[i][1]);
+			retval = machxo2_set_register(reg_default_val[i][0],
+							reg_default_val[i][1]);
 			printk(KERN_ALERT "MachXo2: machxo2_set_reg try %d \n",i);
 		}
 		
@@ -258,17 +263,17 @@ static int machxo2_init(void)
 	memset(&info, 0, sizeof(struct i2c_board_info));
 	info.addr = MACHXO2_I2C_ADDRESS;
 	strlcpy(info.type, MACHXO2_NAME, I2C_NAME_SIZE);
-
 	adapter = i2c_get_adapter(MACHXO2_I2C_ID);
+	
 	if ( NULL == adapter )
 	{
 		printk (KERN_NOTICE "MachXo2: Failed to get the adapter.\n");
 	}
 
-	machxo2_dev.client = i2c_new_device(adapter, &info);
+	machxo2_dev.client = i2c_new_device(adapter, &info);	
 	i2c_put_adapter(adapter);
 	if(NULL == machxo2_dev.client){
-		printk(KERN_NOTICE "MachXo2: Failed to creat the new i2c device.\n");
+		printk(KERN_NOTICE "MachXo2: Failed to creat new i2c device.\n");
 	}
 	printk(KERN_NOTICE "MachXo2: created the new i2c device.\n");
 
@@ -278,7 +283,8 @@ static int machxo2_init(void)
 	}
 
 	if(retval < 0){
-		printk ( KERN_WARNING "MachXo2 : Can't get major number %d\n" , MAJOR_NUM);
+		printk ( KERN_WARNING "MachXo2 : Can't get major number %d\n" ,
+								MAJOR_NUM);
 		return retval;
 	}
 
@@ -292,11 +298,11 @@ static int machxo2_init(void)
 		printk ( KERN_NOTICE "MachXo2: Cdev registration failed. \n");
 		goto fail;
 	}
-	printk(KERN_ALERT "MachXo2: machxo2_config\n");
-	retval = machxo2_config();
-	if ( retval <0 )
+	//printk(KERN_ALERT "MachXo2: machxo2_config\n");
+	//retval = machxo2_config();
+	//if ( retval <0 )
 	{
-		printk ( KERN_NOTICE "MachXo2: config registration failed. \n");
+	//	printk ( KERN_NOTICE "MachXo2: config registration failed. \n");
 		//goto fail;
 	}
 
@@ -419,7 +425,8 @@ static ssize_t machxo2_read(struct file *file, char __user *buf,
 
 	for (i=0;i<10;i++){
 		retval = machxo2_read_values(mach_data);
-		printk( "MachXo2: I2C data: %d : 0x%x   %d\n", i, mach_data, retval);
+		printk( "MachXo2: I2C data: %d : 0x%x   %d\n", i, mach_data, 
+									retval);
 	}
 
 	//*i2c_get_clientdata(const struct i2c_client *client);
@@ -461,6 +468,5 @@ static ssize_t machxo2_write(struct file *file, const char __user *buf,
 /* I2C macro */
 MODULE_DEVICE_TABLE(i2c, machxo2_idtable);
 module_init(machxo2_init);
-//module_i2c_driver(machxo2_i2c_driver);
 module_exit(machxo2_exit);
 
