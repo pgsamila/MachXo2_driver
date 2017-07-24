@@ -27,10 +27,6 @@ echo "clear files"
 
 sleep 1
 
-echo "Delete Files"
-
-sleep 1
-
 echo "Coppy files"
 
 sleep 1

@@ -264,14 +264,17 @@ static int machxo2_init(void)
 	info.addr = MACHXO2_I2C_ADDRESS;
 	strlcpy(info.type, MACHXO2_NAME, I2C_NAME_SIZE);
 	adapter = i2c_get_adapter(MACHXO2_I2C_ID);
-	
+
 	if ( NULL == adapter )
 	{
 		printk (KERN_NOTICE "MachXo2: Failed to get the adapter.\n");
 	}
-
-	machxo2_dev.client = i2c_new_device(adapter, &info);	
+	
+	machxo2_dev.client = i2c_new_device(adapter, &info);	/* pinctrl DT */
+	
 	i2c_put_adapter(adapter);
+	
+		
 	if(NULL == machxo2_dev.client){
 		printk(KERN_NOTICE "MachXo2: Failed to creat new i2c device.\n");
 	}
