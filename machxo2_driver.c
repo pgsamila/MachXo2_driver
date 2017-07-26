@@ -64,8 +64,8 @@ dev_t dev;
 struct machxo2_data {
 	struct i2c_client	*client;
 	int major;
-	struct semaphore sem;
-	struct cdev cdev;	  
+	struct semaphore 	sem;
+	struct cdev 		cdev;	  
 }machxo2_dev;
 
 int MAJOR_NUM = 100;
@@ -270,7 +270,7 @@ static int machxo2_init(void)
 		printk (KERN_NOTICE "MachXo2: Failed to get the adapter.\n");
 	}
 	
-	machxo2_dev.client = i2c_new_device(adapter, &info);	/* pinctrl DT */
+	machxo2_dev.client = i2c_new_device(adapter, &info);	
 	
 	i2c_put_adapter(adapter);
 	
@@ -301,13 +301,14 @@ static int machxo2_init(void)
 		printk ( KERN_NOTICE "MachXo2: Cdev registration failed. \n");
 		goto fail;
 	}
-	//printk(KERN_ALERT "MachXo2: machxo2_config\n");
-	//retval = machxo2_config();
-	//if ( retval <0 )
+	/*
+	printk(KERN_ALERT "MachXo2: machxo2_config\n");
+	retval = machxo2_config();
+	if ( retval <0 )
 	{
-	//	printk ( KERN_NOTICE "MachXo2: config registration failed. \n");
-		//goto fail;
-	}
+		printk ( KERN_NOTICE "MachXo2: config registration failed. \n");
+		goto fail;
+	}*/
 
 
 	printk ( KERN_ALERT "MachXo2 : Major number = %d \n" , MAJOR_NUM ) ;
