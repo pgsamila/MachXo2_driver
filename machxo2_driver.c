@@ -123,10 +123,9 @@ static int machxo2_i2c_probe(struct i2c_client *client,
 		printk(KERN_ALERT "MachXo2: Probe\n");
 		ret = 0;
 	}
-	
+
 	return ret;
 }
-
 
 /** 
  *  machxo2_i2c_remove - machxo2 i2c remove function
@@ -138,7 +137,6 @@ static int machxo2_i2c_remove(struct i2c_client *client)
 
 	return 0;
 }
-
 
 /** 
  *  machxo2_set_register() - Sets the given register located inside the 
@@ -152,9 +150,9 @@ static int machxo2_i2c_remove(struct i2c_client *client)
 int machxo2_set_register(char reg, char val)
 {
 	int retval = 0;
-	char reg_val_pair[] = {reg,val};
+	char reg_val_pair[] = {reg, val};
 
-	retval = i2c_master_send(machxo2_dev.client,reg_val_pair,2);
+	retval = i2c_master_send(machxo2_dev.client, reg_val_pair, 2);
 	
 	if (retval <0) 
 	{
@@ -186,7 +184,7 @@ int machxo2_get_register(char reg, char *val)
 		printk(KERN_ALERT "Machxo2 : at machxo2_get_register 1st\n");
 		goto error;
 	}
-	retval = i2c_master_recv(machxo2_dev.client, val,1);	
+	retval = i2c_master_recv(machxo2_dev.client, val, 1);	
 	if (retval <0) {
 		DEBUGGER
 		printk(KERN_ALERT "Machxo2 : at machxo2_get_register 2nd\n");
@@ -221,22 +219,22 @@ int machxo2_config()
 		{0x24, 0x00}
 	};
 	
-	for (i=0;i<13;i++)
+	for (i = 0; i < 13; i++)
 	{
 		
-		if (i==10){/*FILTER_RESET*/
-			retval = machxo2_get_register(reg_default_val[i][0],&tmp);
+		if (i == 10){/*FILTER_RESET*/
+			retval = machxo2_get_register(reg_default_val[i][0], &tmp);
 			DEBUGGER
-			printk(KERN_NOTICE "MachXo2: machxo2_get_reg try %d \n",i);
+			printk(KERN_NOTICE "MachXo2: machxo2_get_reg try %d \n", i);
 		}
 		else{
 			retval = machxo2_set_register(reg_default_val[i][0],
 							reg_default_val[i][1]);
 			DEBUGGER
-			printk(KERN_NOTICE "MachXo2: machxo2_set_reg try %d \n",i);
+			printk(KERN_NOTICE "MachXo2: machxo2_set_reg try %d \n", i);
 		}
 		
-		if (retval<0)
+		if (retval < 0)
 			return retval;
 	}
 	
@@ -286,7 +284,7 @@ static int machxo2_init(void)
 	printk(KERN_NOTICE "MachXo2: created the new i2c device.\n");
 
 	if(MAJOR_NUM){
-		DEV = MKDEV ( MAJOR_NUM , 0 ) ;
+		DEV = MKDEV (MAJOR_NUM , 0) ;
 		retval = register_chrdev_region ( DEV , 1 , "MachXo2" ) ;       
 	}
 
@@ -317,11 +315,10 @@ static int machxo2_init(void)
 	}
 
 	DEBUGGER
-	printk ( KERN_NOTICE "MachXo2 : Major number = %d \n" , MAJOR_NUM ) ;
-	sema_init(&machxo2_dev.sem,1);
+	printk (KERN_NOTICE "MachXo2 : Major number = %d \n" , MAJOR_NUM) ;
+	sema_init(&machxo2_dev.sem, 1);
 	DEBUGGER
 	printk(KERN_NOTICE "MachXo2: initialization complete\n");
-	//machxo2_i2c_read_value(struct i2c_client *client, u8 reg);
 	return 0;
 
  fail: 
@@ -339,7 +336,7 @@ static void machxo2_exit(void)
 	dev_t DEVNO = MKDEV(MAJOR_NUM, 0);
 
 	cdev_del(&machxo2_dev.cdev);
-	unregister_chrdev_region(DEVNO,1);
+	unregister_chrdev_region(DEVNO, 1);
 
 	i2c_unregister_device(machxo2_dev.client);
 	i2c_del_driver(&machxo2_i2c_driver);
@@ -392,7 +389,7 @@ do{
 		retval  = machxo2_get_register(0x48, &val_reg_stat);
 		if (retval<0){
 			DEBUGGER
-			printk(KERN_ALERT "MachXo2: line 327\n");
+			printk(KERN_ALERT "MachXo2: machxo2_read_values set 1\n");
 			goto exit_function;
 		}
 		udelay(MACHXO_READ_WAIT_TIME_US);
@@ -406,8 +403,8 @@ do{
 	}while (!(val_reg_stat & 0x48));
 	
 	for (i=0; i<6; i++){
-		//TODO: define 0x28
-		retval = machxo2_get_register(0x48 + i,&tmp);
+		//TODO: define 0x48
+		retval = machxo2_get_register(0x48 + i, &tmp);
 		if (retval<0) goto exit_function;
 		
 		val[i] = tmp;
