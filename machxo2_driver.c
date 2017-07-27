@@ -116,6 +116,7 @@ static struct i2c_driver machxo2_i2c_driver = {
 static int machxo2_i2c_probe(struct i2c_client *client, 
 						const struct i2c_device_id *id)
 {
+	//TODO: the probbing bug need to fix
 	int ret = -ENODEV;
 	
 	if(MACHXO2_I2C_ADDRESS == client->addr){
@@ -154,8 +155,7 @@ int machxo2_set_register(char reg, char val)
 
 	retval = i2c_master_send(machxo2_dev.client, reg_val_pair, 2);
 	
-	if (retval <0) 
-	{
+	if (retval <0) {
 		DEBUGGER
 		printk(KERN_ALERT "Machxo2: Error setting register 0x%x\n",reg);
 		return retval;
@@ -222,13 +222,13 @@ int machxo2_config()
 	for (i = 0; i < 13; i++)
 	{
 		
-		if (i == 10){/*FILTER_RESET*/
+		if (i == 10) {/*FILTER_RESET*/
 			retval = machxo2_get_register(reg_default_val[i][0], &tmp);
 			DEBUGGER
 			printk(KERN_NOTICE "MachXo2: machxo2_get_reg try %d \n", i);
 		}
-		else{
-			retval = machxo2_set_register(reg_default_val[i][0],
+		else {
+			retval = machxo2_set_register(reg_default_val[i][0], 
 							reg_default_val[i][1]);
 			DEBUGGER
 			printk(KERN_NOTICE "MachXo2: machxo2_set_reg try %d \n", i);
@@ -255,7 +255,7 @@ static int machxo2_init(void)
 	DEBUGGER
 	printk(KERN_NOTICE "MachXo2: STARTING INIT MACHXO2\n");
 	retval = i2c_add_driver(&machxo2_i2c_driver);
-	if(retval){
+	if (retval) {
 		DEBUGGER
 		printk(KERN_WARNING "MachXo2: I2C driver registration failed\n");
 	}
@@ -265,8 +265,7 @@ static int machxo2_init(void)
 	strlcpy(info.type, MACHXO2_NAME, I2C_NAME_SIZE);
 	adapter = i2c_get_adapter(MACHXO2_I2C_ID);
 
-	if ( NULL == adapter )
-	{
+	if ( NULL == adapter ) {
 		DEBUGGER
 		printk (KERN_WARNING "MachXo2: Failed to get the adapter.\n");
 	}
@@ -276,46 +275,38 @@ static int machxo2_init(void)
 	i2c_put_adapter(adapter);
 	
 		
-	if(NULL == machxo2_dev.client){
+	if (NULL == machxo2_dev.client) {
 		DEBUGGER
 		printk(KERN_WARNING "MachXo2: Failed to creat new i2c device.\n");
 	}
 	DEBUGGER
 	printk(KERN_NOTICE "MachXo2: created the new i2c device.\n");
 
-	if(MAJOR_NUM){
-		DEV = MKDEV (MAJOR_NUM , 0) ;
-		retval = register_chrdev_region ( DEV , 1 , "MachXo2" ) ;       
+	if (MAJOR_NUM) {
+		DEV = MKDEV (MAJOR_NUM, 0) ;
+		retval = register_chrdev_region (DEV, 1, "MachXo2");       
 	}
 
-	if(retval < 0){
+	if (retval < 0) {
 		DEBUGGER
-		printk ( KERN_WARNING "MachXo2 : Can't get major number %d\n" ,
+		printk ( KERN_WARNING "MachXo2: Can't get major number %d\n",
 								MAJOR_NUM);
 		return retval;
 	}
 
-	cdev_init ( &machxo2_dev.cdev ,  &machxo2_fops ) ;
+	cdev_init(&machxo2_dev.cdev, &machxo2_fops);
 	machxo2_dev.cdev.owner = THIS_MODULE;
 	machxo2_dev.cdev.ops = &machxo2_fops;
 	retval = cdev_add(&machxo2_dev.cdev, DEV, 1);
 
-	if ( retval <0 )
-	{
+	if (retval <0){
 		DEBUGGER
-		printk ( KERN_WARNING "MachXo2: Cdev registration failed. \n");
+		printk (KERN_WARNING "MachXo2: Cdev registration failed. \n");
 		goto fail;
-	}
-	//printk(KERN_ALERT "MachXo2: machxo2_config\n");
-	//retval = machxo2_config();
-	//if ( retval <0 )
-	{
-	//	printk ( KERN_NOTICE "MachXo2: config registration failed. \n");
-		//goto fail;
 	}
 
 	DEBUGGER
-	printk (KERN_NOTICE "MachXo2 : Major number = %d \n" , MAJOR_NUM) ;
+	printk (KERN_NOTICE "MachXo2 : Major number = %d \n", MAJOR_NUM) ;
 	sema_init(&machxo2_dev.sem, 1);
 	DEBUGGER
 	printk(KERN_NOTICE "MachXo2: initialization complete\n");
@@ -351,7 +342,7 @@ static void machxo2_exit(void)
  */
 int machxo2_open(struct inode *inode, struct file *filp)
 {
-	//DEBUGGER
+	DEBUGGER
         printk(KERN_ALERT "MachXo2: device opened\n");
         return 0;//machxo2_enable();
 }
@@ -367,8 +358,6 @@ int machxo2_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-
-//TODO: fix read value function to work read function 
 int machxo2_read_values(int mach_data)
 {
 	int retval = 0;
@@ -380,40 +369,42 @@ int machxo2_read_values(int mach_data)
 	mach_data = 0;
 	DEBUGGER
 	printk(KERN_ALERT "MachXo2: machxo2_ read_ values calles\n");
-	if(down_interruptible(&machxo2_dev.sem))
+	if (down_interruptible(&machxo2_dev.sem))
 		return -ERESTARTSYS;
 	
-do{
+	do {
 		DEBUGGER
 		printk(KERN_ALERT "MachXo2: went in to do while loop\n");
 		retval  = machxo2_get_register(0x48, &val_reg_stat);
-		if (retval<0){
+		if (retval < 0) {
 			DEBUGGER
 			printk(KERN_ALERT "MachXo2: machxo2_read_values set 1\n");
 			goto exit_function;
 		}
 		udelay(MACHXO_READ_WAIT_TIME_US);
-		i+=MACHXO_READ_WAIT_TIME_US;
+		i += MACHXO_READ_WAIT_TIME_US;
 		
-		if (i>MACHXO2_READ_TIMEOUT_US){
+		if (i > MACHXO2_READ_TIMEOUT_US) {
 			retval  = -ETIMEDOUT;
 			goto exit_function;
 		}
 		
-	}while (!(val_reg_stat & 0x48));
+	} while (!(val_reg_stat & 0x48));
 	
 	for (i=0; i<6; i++){
 		//TODO: define 0x48
 		retval = machxo2_get_register(0x48 + i, &tmp);
-		if (retval<0) goto exit_function;
+		if (retval < 0) 
+			goto exit_function;
 		
 		val[i] = tmp;
 	}
 	
 		//TODO: RET_CTRL_REG define this 
 	retval = machxo2_get_register(0x48, &tmp);
-	i = ((tmp>>3) & 0x3 );
-	if ( i ==3) i =2;	
+	i = ((tmp>>3) & 0x3);
+	if (i == 3) 
+		i = 2;	
 	
 	mach_data = ((s16)((val[1]<<8) | val[0])) * 61;	
 		//TODO: define this 61 bit number 
