@@ -33,6 +33,13 @@
 
 /*#include "machxo2_i2c_driver.h"*/
 
+/* comment next line to deactivate code debugging mode */
+//#define DEBUGGER			if(false)
+
+#ifndef DEBUGGER
+	#define DEBUGGER		if(true)
+#endif
+
 #define MACHXO2_NAME 			"machxo2"
 
 #define	DEVICENAME			"machxo2"
@@ -112,7 +119,7 @@ static int machxo2_i2c_probe(struct i2c_client *client,
 	int ret = -ENODEV;
 	
 	if(MACHXO2_I2C_ADDRESS == client->addr){
-		// TODO: do any init here (put device sleep)
+		DEBUGGER
 		printk(KERN_ALERT "MachXo2: Probe\n");
 		ret = 0;
 	}
@@ -126,6 +133,7 @@ static int machxo2_i2c_probe(struct i2c_client *client,
  */
 static int machxo2_i2c_remove(struct i2c_client *client)
 {
+	DEBUGGER
 	printk(KERN_ALERT "MachXo2: i2c_remove\n");
 
 	return 0;
@@ -145,12 +153,12 @@ int machxo2_set_register(char reg, char val)
 {
 	int retval = 0;
 	char reg_val_pair[] = {reg,val};
-    
-		
+
 	retval = i2c_master_send(machxo2_dev.client,reg_val_pair,2);
 	
 	if (retval <0) 
 	{
+		DEBUGGER
 		printk(KERN_ALERT "Machxo2: Error setting register 0x%x\n",reg);
 		return retval;
 	}
@@ -173,19 +181,22 @@ int machxo2_get_register(char reg, char *val)
 	int retval = 0;
 	
 	retval = i2c_master_send(machxo2_dev.client, &reg, 1);	
-	if (retval <0) { 
-		printk(KERN_ALERT "Machxo2 : line 188\n");
+	if (retval <0) {
+		DEBUGGER
+		printk(KERN_ALERT "Machxo2 : at machxo2_get_register 1st\n");
 		goto error;
 	}
 	retval = i2c_master_recv(machxo2_dev.client, val,1);	
 	if (retval <0) {
-		printk(KERN_ALERT "Machxo2 : line 193\n");
+		DEBUGGER
+		printk(KERN_ALERT "Machxo2 : at machxo2_get_register 2nd\n");
 		goto error;
 	}
 	return 0;
 	
 error:
-	printk(KERN_ALERT "Machxo2 : Error accessing register 0x%x\n",reg);
+	DEBUGGER
+	printk(KERN_WARNING "Machxo2 : Error accessing register 0x%x\n",reg);
 	return retval;
 }
 
@@ -215,12 +226,14 @@ int machxo2_config()
 		
 		if (i==10){/*FILTER_RESET*/
 			retval = machxo2_get_register(reg_default_val[i][0],&tmp);
-			printk(KERN_ALERT "MachXo2: machxo2_get_reg try %d \n",i);
+			DEBUGGER
+			printk(KERN_NOTICE "MachXo2: machxo2_get_reg try %d \n",i);
 		}
 		else{
 			retval = machxo2_set_register(reg_default_val[i][0],
 							reg_default_val[i][1]);
-			printk(KERN_ALERT "MachXo2: machxo2_set_reg try %d \n",i);
+			DEBUGGER
+			printk(KERN_NOTICE "MachXo2: machxo2_set_reg try %d \n",i);
 		}
 		
 		if (retval<0)
@@ -240,11 +253,13 @@ static int machxo2_init(void)
 	dev_t DEV = 0;
 	struct i2c_board_info info;
 	struct i2c_adapter *adapter;
-	
-	printk(KERN_ALERT "STARTING INIT MACHXO2\n");
+
+	DEBUGGER
+	printk(KERN_NOTICE "MachXo2: STARTING INIT MACHXO2\n");
 	retval = i2c_add_driver(&machxo2_i2c_driver);
 	if(retval){
-		printk(KERN_ALERT "MachXo2: I2C driver registration failed\n");
+		DEBUGGER
+		printk(KERN_WARNING "MachXo2: I2C driver registration failed\n");
 	}
 
 	memset(&info, 0, sizeof(struct i2c_board_info));
@@ -254,7 +269,8 @@ static int machxo2_init(void)
 
 	if ( NULL == adapter )
 	{
-		printk (KERN_NOTICE "MachXo2: Failed to get the adapter.\n");
+		DEBUGGER
+		printk (KERN_WARNING "MachXo2: Failed to get the adapter.\n");
 	}
 	
 	machxo2_dev.client = i2c_new_device(adapter, &info);	/* pinctrl DT */
@@ -263,8 +279,10 @@ static int machxo2_init(void)
 	
 		
 	if(NULL == machxo2_dev.client){
-		printk(KERN_NOTICE "MachXo2: Failed to creat new i2c device.\n");
+		DEBUGGER
+		printk(KERN_WARNING "MachXo2: Failed to creat new i2c device.\n");
 	}
+	DEBUGGER
 	printk(KERN_NOTICE "MachXo2: created the new i2c device.\n");
 
 	if(MAJOR_NUM){
@@ -273,6 +291,7 @@ static int machxo2_init(void)
 	}
 
 	if(retval < 0){
+		DEBUGGER
 		printk ( KERN_WARNING "MachXo2 : Can't get major number %d\n" ,
 								MAJOR_NUM);
 		return retval;
@@ -285,7 +304,8 @@ static int machxo2_init(void)
 
 	if ( retval <0 )
 	{
-		printk ( KERN_NOTICE "MachXo2: Cdev registration failed. \n");
+		DEBUGGER
+		printk ( KERN_WARNING "MachXo2: Cdev registration failed. \n");
 		goto fail;
 	}
 	//printk(KERN_ALERT "MachXo2: machxo2_config\n");
@@ -296,15 +316,17 @@ static int machxo2_init(void)
 		//goto fail;
 	}
 
-
-	printk ( KERN_ALERT "MachXo2 : Major number = %d \n" , MAJOR_NUM ) ;
+	DEBUGGER
+	printk ( KERN_NOTICE "MachXo2 : Major number = %d \n" , MAJOR_NUM ) ;
 	sema_init(&machxo2_dev.sem,1);
-	printk(KERN_ALERT "MachXo2: initialization complete\n");
+	DEBUGGER
+	printk(KERN_NOTICE "MachXo2: initialization complete\n");
 	//machxo2_i2c_read_value(struct i2c_client *client, u8 reg);
 	return 0;
 
  fail: 
-	printk (KERN_NOTICE "MachXo2 : init failed.\n");
+	DEBUGGER
+	printk (KERN_WARNING "MachXo2 : init failed.\n");
 	return retval;
 }
 
@@ -322,6 +344,7 @@ static void machxo2_exit(void)
 	i2c_unregister_device(machxo2_dev.client);
 	i2c_del_driver(&machxo2_i2c_driver);
 
+	DEBUGGER
 	printk(KERN_ALERT "MachXo2: exit\n");
 }
 
@@ -331,7 +354,7 @@ static void machxo2_exit(void)
  */
 int machxo2_open(struct inode *inode, struct file *filp)
 {
-	//i2c_add_driver(&machxo2_driver);
+	//DEBUGGER
         printk(KERN_ALERT "MachXo2: device opened\n");
         return 0;//machxo2_enable();
 }
@@ -342,6 +365,7 @@ int machxo2_open(struct inode *inode, struct file *filp)
  */
 int machxo2_release(struct inode *inode, struct file *filp)
 {
+	DEBUGGER
 	printk(KERN_ALERT "MachXo2: device released\n");
 	return 0;
 }
@@ -357,14 +381,17 @@ int machxo2_read_values(int mach_data)
 	int val[6];
 
 	mach_data = 0;
+	DEBUGGER
 	printk(KERN_ALERT "MachXo2: machxo2_ read_ values calles\n");
 	if(down_interruptible(&machxo2_dev.sem))
 		return -ERESTARTSYS;
 	
 do{
+		DEBUGGER
 		printk(KERN_ALERT "MachXo2: went in to do while loop\n");
 		retval  = machxo2_get_register(0x48, &val_reg_stat);
 		if (retval<0){
+			DEBUGGER
 			printk(KERN_ALERT "MachXo2: line 327\n");
 			goto exit_function;
 		}
@@ -415,11 +442,12 @@ static ssize_t machxo2_read(struct file *file, char __user *buf,
 
 	for (i=0;i<10;i++){
 		retval = machxo2_read_values(mach_data);
+		DEBUGGER
 		printk( "MachXo2: I2C data: %d : 0x%x   %d\n", i, mach_data, 
 									retval);
 	}
 
-	//*i2c_get_clientdata(const struct i2c_client *client);
+	DEBUGGER
 	printk(KERN_ALERT "MachXo2: call for read\n");
 	return retval;
 
@@ -435,6 +463,7 @@ static ssize_t machxo2_read(struct file *file, char __user *buf,
 static ssize_t machxo2_write(struct file *file, const char __user *buf, 
 			size_t count, loff_t *ppos)
 {
+	DEBUGGER
 	printk(KERN_ALERT "MachXo2: call for write\n");
 
 	/* Check for correct user data */
@@ -448,9 +477,11 @@ static ssize_t machxo2_write(struct file *file, const char __user *buf,
                 	return -EINVAL;
 
 		*ppos = count;
+		DEBUGGER
 		printk(KERN_ALERT "MachXo2: Value written\n");
 	 	return count;
 	}  
+	DEBUGGER
 	printk(KERN_ALERT "MachXo2: Value Not written\n");
 	return 1;
 }
