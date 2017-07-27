@@ -84,7 +84,7 @@ struct machxo2_data {
 	int major;
 	struct semaphore sem;
 	struct cdev cdev;	  
-}machxo2_dev;
+} machxo2_dev;
 
 /* machxo2 file operations structure */
 struct file_operations machxo2_fops = {
@@ -119,7 +119,7 @@ static int machxo2_i2c_probe(struct i2c_client *client,
 	//TODO: the probbing bug need to fix
 	int ret = -ENODEV;
 	
-	if(MACHXO2_I2C_ADDRESS == client->addr){
+	if (MACHXO2_I2C_ADDRESS == client->addr) {
 		DEBUGGER
 		printk(KERN_ALERT "MachXo2: Probe\n");
 		ret = 0;
@@ -226,8 +226,7 @@ int machxo2_config()
 			retval = machxo2_get_register(reg_default_val[i][0], &tmp);
 			DEBUGGER
 			printk(KERN_NOTICE "MachXo2: machxo2_get_reg try %d \n", i);
-		}
-		else {
+		} else {
 			retval = machxo2_set_register(reg_default_val[i][0], 
 							reg_default_val[i][1]);
 			DEBUGGER
@@ -299,7 +298,7 @@ static int machxo2_init(void)
 	machxo2_dev.cdev.ops = &machxo2_fops;
 	retval = cdev_add(&machxo2_dev.cdev, DEV, 1);
 
-	if (retval <0){
+	if (retval <0) {
 		DEBUGGER
 		printk (KERN_WARNING "MachXo2: Cdev registration failed. \n");
 		goto fail;
@@ -391,7 +390,7 @@ int machxo2_read_values(int mach_data)
 		
 	} while (!(val_reg_stat & 0x48));
 	
-	for (i=0; i<6; i++){
+	for (i=0; i<6; i++) {
 		//TODO: define 0x48
 		retval = machxo2_get_register(0x48 + i, &tmp);
 		if (retval < 0) 
@@ -428,7 +427,7 @@ static ssize_t machxo2_read(struct file *file, char __user *buf,
 	int i;
 	int mach_data = 0;
 
-	for (i=0;i<10;i++){
+	for (i=0;i<10;i++) {
 		retval = machxo2_read_values(mach_data);
 		DEBUGGER
 		printk( "MachXo2: I2C data: %d : 0x%x   %d\n", i, mach_data, 
@@ -455,13 +454,13 @@ static ssize_t machxo2_write(struct file *file, const char __user *buf,
 	printk(KERN_ALERT "MachXo2: call for write\n");
 
 	/* Check for correct user data */
-	if(buf != NULL && count != 0 && count < TEXTLENGTH){
+	if (buf != NULL && count != 0 && count < TEXTLENGTH) {
 
 		/* clear current data on driver */
 		memset(machxo2_str, 0, sizeof machxo2_str);
 
 		/* send data from user */
-	        if(copy_from_user(machxo2_str, buf, count) != 0)
+	        if (copy_from_user(machxo2_str, buf, count) != 0)
                 	return -EINVAL;
 
 		*ppos = count;
