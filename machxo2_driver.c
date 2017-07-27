@@ -474,6 +474,8 @@ static ssize_t machxo2_write(struct file *file, const char __user *buf,
 }
 
 MODULE_LICENSE("GPL");
+MODULE_AUTHOR("P.G.Amila Sampath Pelaketigamage <pgasampath@gmail.com>");
+MODULE_DESCRIPTION("MACHXO2 Programming/Debugging Driver");
 MODULE_DEVICE_TABLE(i2c, machxo2_idtable);
 module_init(machxo2_init);
 module_exit(machxo2_exit);
