@@ -9,38 +9,37 @@
  * as published by the Free Software Foundation; version 3
  * of the License.
  */
-#include <linux/kernel.h>
-#include <linux/fs.h>
-#include <linux/init.h>
-#include <linux/miscdevice.h>
-#include <linux/delay.h>
-#include <linux/slab.h> 
-#include <linux/types.h> 
-#include <linux/ioctl.h>
-#include <linux/fcntl.h>  
-
-#include <linux/workqueue.h>
-#include <linux/gpio.h>
-#include <linux/interrupt.h>  
 
 #include <asm/segment.h>
 #include <asm/uaccess.h>
+
 #include <linux/cdev.h>
+#include <linux/delay.h>
 #include <linux/errno.h>
+#include <linux/fcntl.h> 
+#include <linux/fs.h>
+#include <linux/gpio.h>
+#include <linux/init.h>
+#include <linux/interrupt.h>  
+#include <linux/ioctl.h>
 #include <linux/i2c.h>
-#include <linux/module.h>
 #include <linux/i2c-dev.h>
+#include <linux/kernel.h>
+#include <linux/miscdevice.h>
+#include <linux/module.h>
+#include <linux/slab.h> 
+#include <linux/types.h> 
+#include <linux/workqueue.h>
 
-//#include "machxo2_i2c_driver.h"
+/*#include "machxo2_i2c_driver.h"*/
 
-#define MACHXO2_NAME 	"machxo2"
+#define MACHXO2_NAME 			"machxo2"
 
-#define	DEVICENAME	"machxo2"
-#define	TEXTLENGTH	100
-/* The Pic Register */
+#define	DEVICENAME			"machxo2"
+#define	TEXTLENGTH			100
+
 #define MACHXO2_REG_CONF 		0x46
 #define MACHXO2_SHUTDOWN 		0x01
-
 #define MACHXO2_I2C_ADDRESS		0x48    /*Error on creating i2c*/
 #define MACHXO2_I2C_ID			0	/* dev/i2c-x ; enter x value */
 #define MACHXO2_REG_CTRL_REG1		0x20
@@ -48,27 +47,7 @@
 #define MACHXO_READ_WAIT_TIME_US 	100
 #define MACHXO2_READ_TIMEOUT_US		3000000
 
-MODULE_LICENSE("GPL");
-
-/* global variables */
-ssize_t machxo2_size;
-char machxo2_str[TEXTLENGTH];
-int result;
-int major;
-int minor = 0;
-int numofdevice = 1;
-dev_t dev;
-//struct cdev cdev;
-
-/* client's additional data */
-struct machxo2_data {
-	struct i2c_client	*client;
-	int major;
-	struct semaphore 	sem;
-	struct cdev 		cdev;	  
-}machxo2_dev;
-
-int MAJOR_NUM = 100;
+#define MAJOR_NUM 			100
 
 /* funcitons */
 static int machxo2_init(void);
@@ -86,6 +65,19 @@ int machxo2_set_register(char reg, char val);
 int machxo2_get_register(char reg, char *val);
 int machxo2_config(void);
 
+/* Global Variables */
+ssize_t machxo2_size;
+char machxo2_str[TEXTLENGTH];
+int result;
+dev_t dev;
+
+/* client's additional data */
+struct machxo2_data {
+	struct i2c_client *client;
+	int major;
+	struct semaphore sem;
+	struct cdev cdev;	  
+}machxo2_dev;
 
 /* machxo2 file operations structure */
 struct file_operations machxo2_fops = {
@@ -99,7 +91,7 @@ struct file_operations machxo2_fops = {
 /* The I2C driver structure */ 
 static const struct i2c_device_id machxo2_idtable[] = {
 	{ MACHXO2_NAME, 0 },
-	{ /* LIST END */ }
+	{ }
 };
 
 /* I2C driver sturct for the machxo2 I2C control*/
@@ -107,17 +99,12 @@ static struct i2c_driver machxo2_i2c_driver = {
 	.driver = {
 		.name	= MACHXO2_NAME,
 		.owner	= THIS_MODULE,
-		//.pm	= &machxo2_pm_ops,	
 	},
-
 	.probe		= machxo2_i2c_probe,
 	.remove		= machxo2_i2c_remove,
 	.id_table	= machxo2_idtable,
 };
 
-
-
-/* device probe and removal */
 /* I2C prob */
 static int machxo2_i2c_probe(struct i2c_client *client, 
 						const struct i2c_device_id *id)
@@ -135,7 +122,7 @@ static int machxo2_i2c_probe(struct i2c_client *client,
 
 
 /** 
- *  machxo2_i2c_remove() - machxo2 i2c remove function
+ *  machxo2_i2c_remove - machxo2 i2c remove function
  */
 static int machxo2_i2c_remove(struct i2c_client *client)
 {
@@ -270,7 +257,7 @@ static int machxo2_init(void)
 		printk (KERN_NOTICE "MachXo2: Failed to get the adapter.\n");
 	}
 	
-	machxo2_dev.client = i2c_new_device(adapter, &info);	
+	machxo2_dev.client = i2c_new_device(adapter, &info);	/* pinctrl DT */
 	
 	i2c_put_adapter(adapter);
 	
@@ -301,14 +288,13 @@ static int machxo2_init(void)
 		printk ( KERN_NOTICE "MachXo2: Cdev registration failed. \n");
 		goto fail;
 	}
-	/*
-	printk(KERN_ALERT "MachXo2: machxo2_config\n");
-	retval = machxo2_config();
-	if ( retval <0 )
+	//printk(KERN_ALERT "MachXo2: machxo2_config\n");
+	//retval = machxo2_config();
+	//if ( retval <0 )
 	{
-		printk ( KERN_NOTICE "MachXo2: config registration failed. \n");
-		goto fail;
-	}*/
+	//	printk ( KERN_NOTICE "MachXo2: config registration failed. \n");
+		//goto fail;
+	}
 
 
 	printk ( KERN_ALERT "MachXo2 : Major number = %d \n" , MAJOR_NUM ) ;
@@ -469,8 +455,7 @@ static ssize_t machxo2_write(struct file *file, const char __user *buf,
 	return 1;
 }
 
-/* I2C macro */
+MODULE_LICENSE("GPL");
 MODULE_DEVICE_TABLE(i2c, machxo2_idtable);
 module_init(machxo2_init);
 module_exit(machxo2_exit);
-
