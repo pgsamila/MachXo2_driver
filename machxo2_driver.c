@@ -40,7 +40,7 @@
 #ifdef TURN_ON_DEBUG
 #	define	MDEBUG(msg, args...)		printk(KERN_NOTICE "MachXo2: " msg, ## args)
 #else
-#	define	MDEBUG(msg, args...)
+#	define	MDEBUG(msg, args...)		do { } while (0)
 #endif
 
 #define	MACHXO2_NAME			"machxo2"
@@ -68,7 +68,7 @@ static ssize_t machxo2_read(struct file *file, char *buf, size_t count,
 								loff_t *ppos);
 static ssize_t machxo2_write(struct file *file, const char *buf, size_t count,
 								loff_t *ppos);
-static int machxo2_i2c_probe(struct i2c_client *client, 
+static int machxo2_i2c_probe(struct i2c_client *client,
 						const struct i2c_device_id *id);
 static int machxo2_i2c_remove(struct i2c_client *client);
 int machxo2_set_register(char reg, char val);
@@ -86,7 +86,7 @@ struct machxo2_data {
 	struct i2c_client *client;
 	int major;
 	struct semaphore sem;
-	struct cdev cdev;	
+	struct cdev cdev;
 } machxo2_dev;
 
 /*machxo2 file operations structure*/
@@ -121,7 +121,7 @@ static int machxo2_i2c_probe(struct i2c_client *client,
 {
 	//TODO: the probbing bug need to fix
 	int ret = -ENODEV;
-	
+
 	if (MACHXO2_I2C_ADDRESS == client->addr) {
 		MDEBUG("Probe\n");
 		ret = 0;
@@ -140,11 +140,11 @@ static int machxo2_i2c_remove(struct i2c_client *client)
 	return 0;
 }
 
-/** 
+/**
  *  machxo2_set_register() - Sets the given register located inside the
  *				machxo2
- *  @reg:	register address
- *  @val:	value to write
+ *  @reg: register address
+ *  @val: value to write
  *
  *  This function sets the given register located inside the machxo2.
  *  Setting is performed using I2C control line
@@ -155,12 +155,12 @@ int machxo2_set_register(char reg, char val)
 	char reg_val_pair[] = {reg, val};
 
 	retval = i2c_master_send(machxo2_dev.client, reg_val_pair, 2);
-	
-	if (retval <0) {
-		MDEBUG("Error setting register 0x%x\n",reg);
+
+	if (retval < 0) {
+		MDEBUG("Error setting register 0x%x\n", reg);
 		return retval;
 	}
-	
+
 	return 0;
 }
 
@@ -168,8 +168,8 @@ int machxo2_set_register(char reg, char val)
 /**
  *  machxo2_get_register() - gets the value of the given register located
  *				inside the machxo2
- *  @reg:	register address
- *  @val:	char pointer buffer used to hold the value returning
+ *  @reg: register address
+ *  @val: char pointer buffer used to hold the value returning
  *
  *  This function gets the curent value of the given register located inside
  *  the machxo2. Getting is performed using I2C control line
@@ -177,21 +177,21 @@ int machxo2_set_register(char reg, char val)
 int machxo2_get_register(char reg, char *val)
 {
 	int retval = 0;
-	
-	retval = i2c_master_send(machxo2_dev.client, &reg, 1);	
-	if (retval <0) {
+
+	retval = i2c_master_send(machxo2_dev.client, &reg, 1);
+	if (retval < 0) {
 		MDEBUG("At machxo2_get_register 1st line\n");
 		goto error;
 	}
-	retval = i2c_master_recv(machxo2_dev.client, val, 1);	
-	if (retval <0) {
+	retval = i2c_master_recv(machxo2_dev.client, val, 1);
+	if (retval < 0) {
 		MDEBUG("At machxo2_get_register 2nd line\n");
 		goto error;
 	}
 	return 0;
-	
+
 error:
-	MDEBUG("Error accessing register 0x%x\n",reg);
+	MDEBUG("Error accessing register 0x%x\n", reg);
 	return retval;
 }
 
@@ -201,8 +201,8 @@ int machxo2_config()
 	char tmp;
 	int i;
 	char reg_default_val[13][2] = {
-		{0x48, 0x00},	
-		{0x21, 0x09},	
+		{0x48, 0x00},
+		{0x21, 0x09},
 		{0x22, 0x01},
 		{0x23, 0x80},
 		{0x26, 0x00},
@@ -215,23 +215,21 @@ int machxo2_config()
 		{0X34, 0x2A},
 		{0x24, 0x00}
 	};
-	
-	for (i = 0; i < 13; i++)
-	{
-		
+
+	for (i = 0; i < 13; i++) {
 		if (i == 10) {/*FILTER_RESET*/
 			retval = machxo2_get_register(reg_default_val[i][0], &tmp);
 			MDEBUG("machxo2_get_reg try 10th %d \n", i);
 		} else {
-			retval = machxo2_set_register(reg_default_val[i][0], 
+			retval = machxo2_set_register(reg_default_val[i][0],
 							reg_default_val[i][1]);
 			MDEBUG("machxo2_set_reg try else %d \n", i);
 		}
-		
+
 		if (retval < 0)
 			return retval;
 	}
-	
+
 	return 0;
 }
 
@@ -240,7 +238,7 @@ int machxo2_config()
  */
 static int machxo2_init(void)
 {
-	
+
 	int retval = 0;
 	dev_t DEV = 0;
 	struct i2c_board_info info;
@@ -257,14 +255,14 @@ static int machxo2_init(void)
 	strlcpy(info.type, MACHXO2_NAME, I2C_NAME_SIZE);
 	adapter = i2c_get_adapter(MACHXO2_I2C_ID);
 
-	if ( NULL == adapter ) {
+	if (NULL == adapter) {
 		MDEBUG("Failed to get the adapter.\n");
 	}
-	
+
 	machxo2_dev.client = i2c_new_device(adapter, &info);	/*pinctrl DT*/
-	
+
 	i2c_put_adapter(adapter);
-	
+
 		
 	if (NULL == machxo2_dev.client) {
 		MDEBUG("Failed to creat new i2c device.\n");
@@ -286,7 +284,7 @@ static int machxo2_init(void)
 	machxo2_dev.cdev.ops = &machxo2_fops;
 	retval = cdev_add(&machxo2_dev.cdev, DEV, 1);
 
-	if (retval <0) {
+	if (retval < 0) {
 		MDEBUG("Cdev registration failed.\n");
 		goto fail;
 	}
@@ -316,7 +314,7 @@ static void machxo2_exit(void)
 	i2c_del_driver(&machxo2_i2c_driver);
 
 	MDEBUG("Exit\n");
-} 
+}
 
 /*
  * machxo2_open - driver opening at runtime
@@ -350,7 +348,7 @@ int machxo2_read_values(int mach_data)
 	MDEBUG("machxo2_read_values calles\n");
 	if (down_interruptible(&machxo2_dev.sem))
 		return -ERESTARTSYS;
-	
+
 	do {
 		MDEBUG("Went in to do while loop\n");
 		retval  = machxo2_get_register(0x48, &val_reg_stat);
@@ -360,30 +358,30 @@ int machxo2_read_values(int mach_data)
 		}
 		udelay(MACHXO_READ_WAIT_TIME_US);
 		i += MACHXO_READ_WAIT_TIME_US;
-		
+
 		if (i > MACHXO2_READ_TIMEOUT_US) {
 			retval  = -ETIMEDOUT;
 			goto exit_function;
 		}
-		
+
 	} while (!(val_reg_stat & 0x48));
-	
-	for (i=0; i<6; i++) {
+
+	for (i = 0; i < 6; i++) {
 		//TODO: define 0x48
 		retval = machxo2_get_register(0x48 + i, &tmp);
 		if (retval < 0) 
 			goto exit_function;
-		
+
 		val[i] = tmp;
 	}
-	
-		//TODO: RET_CTRL_REG define this 
+
+		//TODO: RET_CTRL_REG define this
 	retval = machxo2_get_register(0x48, &tmp);
 	i = ((tmp>>3) & 0x3);
-	if (i == 3) 
-		i = 2;	
-	
-	mach_data = ((s16)((val[1]<<8) | val[0])) * 61;	
+	if (i == 3)
+		i = 2;
+
+	mach_data = ((s16)((val[1]<<8) | val[0])) * 61;
 		//TODO: define this 61 bit number
 
 exit_function:
@@ -405,7 +403,7 @@ static ssize_t machxo2_read(struct file *file, char __user *buf,
 	int i;
 	int mach_data = 0;
 
-	for (i=0;i<10;i++) {
+	for (i = 0; i < 10; i++) {
 		retval = machxo2_read_values(mach_data);
 		MDEBUG("I2C data: %d : 0x%x   %d\n", i, mach_data, retval);
 	}
